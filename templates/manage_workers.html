@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Trabalhadores - Painel DMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --secondary-color: #4caf50;
+            --accent-color: #81c784;
+            --background-color: #f1f8e9;
+        }
+
+        body {
+            background-color: var(--background-color);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(46, 125, 50, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+        }
+
+        .table th {
+            background-color: rgba(46, 125, 50, 0.1);
+        }
+
+        .recycling-icon {
+            position: absolute;
+            font-size: 5rem;
+            opacity: 0.1;
+            color: var(--primary-color);
+        }
+
+        .recycling-icon-top-right {
+            top: 10px;
+            right: 10px;
+        }
+
+        .recycling-icon-bottom-left {
+            bottom: 10px;
+            left: 10px;
+        }
+
+        .card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            position: relative;
+        }
+
+        .card-header .recycling-icon {
+            opacity: 0.15;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-recycle me-2"></i>DMS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-chart-line me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('manage_workers') }}">
+                            <i class="fas fa-users me-1"></i>Gerenciar Trabalhadores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('change_password') }}">
+                            <i class="fas fa-key me-1"></i>Alterar Senha
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2><i class="fas fa-users me-2"></i>Gerenciar Trabalhadores</h2>
+                <p class="text-muted">Adicione novos trabalhadores e configure seus acessos</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-plus me-2"></i>Adicionar Novo Trabalhador
+                        <i class="fas fa-recycle recycling-icon recycling-icon-top-right"></i>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('add_worker') }}" id="addWorkerForm">
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Nome Completo</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cpf" class="form-label">CPF</label>
+                                <input type="text" class="form-control" id="cpf" name="cpf" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="pis" class="form-label">PIS</label>
+                                <input type="text" class="form-control" id="pis" name="pis" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="rg" class="form-label">RG</label>
+                                <input type="text" class="form-control" id="rg" name="rg" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="birth_date" class="form-label">Data de Nascimento</label>
+                                <input type="date" class="form-control" id="birth_date" name="birth_date" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="gender" class="form-label">Gênero</label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Feminino</option>
+                                    <option value="O">Outro</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Telefone</label>
+                                <input type="text" class="form-control" id="phone" name="phone" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="user_type" class="form-label">Tipo de Usuário</label>
+                                <select class="form-select" id="user_type" name="user_type" required>
+                                    <option value="0">Gerente</option>
+                                    <option value="1">Catador</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Senha Inicial</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="password" name="password" value="Worker123!" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="generatePassword">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">A senha pode ser alterada pelo usuário após o primeiro login.</div>
+                            </div>
+                            <input type="hidden" name="cooperative_id" value="1">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-save me-2"></i>Adicionar Trabalhador
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user-cog me-2"></i>Configurar Acesso
+                        <i class="fas fa-recycle recycling-icon recycling-icon-top-right"></i>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('update_worker_access') }}" id="updateAccessForm">
+                            <div class="mb-3">
+                                <label for="worker_id" class="form-label">Selecione o Trabalhador</label>
+                                <select class="form-select" id="worker_id" name="worker_id" required>
+                                    <option value="">Selecione um trabalhador...</option>
+                                    {% for worker in workers %}
+                                    <option value="{{ worker._id }}">{{ worker.full_name }} ({{ worker.CPF }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new_user_type" class="form-label">Novo Tipo de Usuário</label>
+                                <select class="form-select" id="new_user_type" name="new_user_type" required>
+                                    <option value="0">Gerente</option>
+                                    <option value="1">Catador</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reset_password" class="form-label">Redefinir Senha</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="reset_password" name="reset_password" value="Worker123!" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="generateResetPassword">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="should_reset_password" name="should_reset_password">
+                                    <label class="form-check-label" for="should_reset_password">
+                                        Redefinir senha do usuário
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-save me-2"></i>Atualizar Acesso
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-list me-2"></i>Lista de Trabalhadores
+                        <i class="fas fa-recycle recycling-icon recycling-icon-top-right"></i>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>CPF</th>
+                                        <th>PIS</th>
+                                        <th>RG</th>
+                                        <th>Email</th>
+                                        <th>Telefone</th>
+                                        <th>Data de Nascimento</th>
+                                        <th>Gênero</th>
+                                        <th>Tipo de Usuário</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for worker in workers %}
+                                    <tr>
+                                        <td>{{ worker.full_name }}</td>
+                                        <td>{{ worker.CPF }}</td>
+                                        <td>{{ worker.PIS }}</td>
+                                        <td>{{ worker.RG }}</td>
+                                        <td>{{ worker.email }}</td>
+                                        <td>{{ worker.phone }}</td>
+                                        <td>{{ worker['Birth date'].strftime('%d/%m/%Y') if worker['Birth date'] else '-' }}</td>
+                                        <td>
+                                            {% if worker.gender == 'M' %}
+                                            Masculino
+                                            {% elif worker.gender == 'F' %}
+                                            Feminino
+                                            {% else %}
+                                            Outro
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if worker.user_type == 0 %}
+                                            <span class="badge bg-primary">Gerente</span>
+                                            {% elif worker.user_type == 1 %}
+                                            <span class="badge bg-secondary">Catador</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary edit-worker" data-worker-id="{{ worker._id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger delete-worker" data-worker-id="{{ worker._id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generate random password
+            function generateRandomPassword() {
+                const length = 10;
+                const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                let password = "";
+                for (let i = 0; i < length; i++) {
+                    const randomIndex = Math.floor(Math.random() * charset.length);
+                    password += charset[randomIndex];
+                }
+                return password;
+            }
+
+            // Generate password button
+            document.getElementById('generatePassword').addEventListener('click', function() {
+                document.getElementById('password').value = generateRandomPassword();
+            });
+
+            // Generate reset password button
+            document.getElementById('generateResetPassword').addEventListener('click', function() {
+                document.getElementById('reset_password').value = generateRandomPassword();
+            });
+
+            // Edit worker button
+            document.querySelectorAll('.edit-worker').forEach(button => {
+                button.addEventListener('click', function() {
+                    const workerId = this.getAttribute('data-worker-id');
+                    // Pre-select the worker in the update form
+                    document.getElementById('worker_id').value = workerId;
+                    // Scroll to the update form
+                    document.getElementById('updateAccessForm').scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+
+            // Delete worker button
+            document.querySelectorAll('.delete-worker').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (confirm('Tem certeza que deseja excluir este trabalhador?')) {
+                        const workerId = this.getAttribute('data-worker-id');
+                        // Send delete request
+                        fetch(`/delete-worker/${workerId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reload the page
+                                window.location.reload();
+                            } else {
+                                alert('Erro ao excluir trabalhador: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Erro ao excluir trabalhador');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel DMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --secondary-color: #4caf50;
+            --accent-color: #8bc34a;
+            --light-bg: #f1f8e9;
+            --dark-bg: #1b5e20;
+            --success-color: #66bb6a;
+            --warning-color: #ffa000;
+            --info-color: #26a69a;
+            --chart-color-1: #2e7d32;  /* Dark Green */
+            --chart-color-2: #4caf50;  /* Green */
+            --chart-color-3: #8bc34a;  /* Light Green */
+            --chart-color-4: #66bb6a;  /* Medium Green */
+            --chart-color-5: #26a69a;  /* Teal */
+            --chart-color-6: #009688;  /* Teal Green */
+            --chart-color-7: #43a047;  /* Forest Green */
+            --chart-color-8: #689f38;  /* Olive Green */
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f8e9;
+            color: #333;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+            padding: 1rem 1.5rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .birthday-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .birthday-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .filters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 0.6rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        }
+        
+        .dashboard-title {
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .dashboard-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--secondary-color);
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+        
+        .stats-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .stats-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+        }
+        
+        .loading-spinner i {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            animation: spin 1.5s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chart-legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 0.5rem;
+        }
+        
+        .chart-legend-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .footer p {
+            margin-bottom: 0;
+        }
+        
+        .footer a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Chart specific styles */
+        .chart-tooltip {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .chart-tooltip-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+        
+        .chart-tooltip-value {
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+        
+        /* Recycling theme elements */
+        .recycling-icon {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 5rem;
+            color: var(--primary-color);
+            z-index: 0;
+        }
+        
+        .recycling-icon-top-right {
+            top: 10px;
+            right: 10px;
+        }
+        
+        .recycling-icon-bottom-left {
+            bottom: 10px;
+            left: 10px;
+        }
+        
+        .card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            position: relative;
+        }
+        
+        .card-header .recycling-icon {
+            opacity: 0.15;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-recycle me-2"></i>DMS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if session['user']['user_type'] == 0 %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_workers') }}">
+                            <i class="fas fa-users me-1"></i>Gerenciar Trabalhadores
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('change_password') }}">
+                            <i class="fas fa-key me-1"></i>Alterar Senha
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sair
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="dashboard-title">Dashboard de Coleta de Materiais</h2>
+        
+        <!-- Filtros -->
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="materialFilter" class="form-label"><i class="fas fa-box me-2"></i>Material</label>
+                    <select class="form-select" id="materialFilter">
+                        <option value="">Todos os Materiais</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="workerFilter" class="form-label"><i class="fas fa-user me-2"></i>Trabalhador</label>
+                    <select class="form-select" id="workerFilter">
+                        <option value="">Todos os Trabalhadores</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="dateFilter" class="form-label"><i class="fas fa-calendar me-2"></i>Período</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="30">Últimos 30 Dias</option>
+                        <option value="90">Últimos 90 Dias</option>
+                        <option value="180">Últimos 180 Dias</option>
+                        <option value="365">Último Ano</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Rápidas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stats-value" id="totalMaterials">-</div>
+                    <div class="stats-label">Materiais</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stats-value" id="totalWorkers">-</div>
+                    <div class="stats-label">Trabalhadores</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-weight-hanging"></i>
+                    </div>
+                    <div class="stats-value" id="totalStock">-</div>
+                    <div class="stats-label">Estoque Total (kg)</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stats-value" id="totalEarnings">-</div>
+                    <div class="stats-label">Ganhos Mensais</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Informações de Estoque -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-boxes me-2"></i>Estoque Atual</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="stockChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ganhos Mensais -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-chart-line me-2"></i>Ganhos Mensais</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="earningsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coletas de Trabalhadores -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-users me-2"></i>Coletas de Trabalhadores</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="workerCollectionsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flutuação de Preços -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-chart-bar me-2"></i>Flutuação de Preços (Últimas 6 Semanas)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="priceFluctuationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aniversários -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><i class="fas fa-birthday-cake me-2"></i>Aniversários do Mês</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="birthdaysList" class="row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Painel DMS - Sistema de Gestão de Coleta de Materiais</p>
+            <p>Desenvolvido com <i class="fas fa-heart text-danger"></i> para cooperativas de catadores</p>
+        </div>
+    </footer>
+
+    <script>
+        // Variáveis globais para gráficos
+        let stockChart = null;
+        let earningsChart = null;
+        let workerCollectionsChart = null;
+        let priceFluctuationChart = null;
+        
+        // Configuração global para Chart.js
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.color = '#6c757d';
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.cornerRadius = 4;
+        Chart.defaults.plugins.tooltip.titleFont = {
+            size: 14,
+            weight: 'bold'
+        };
+        Chart.defaults.plugins.tooltip.bodyFont = {
+            size: 13
+        };
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.plugins.legend.labels.padding = 20;
+        Chart.defaults.plugins.legend.labels.usePointStyle = true;
+        Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+
+        // Buscar materiais para filtro
+        async function fetchMaterials() {
+            const response = await fetch('/api/materials');
+            const materials = await response.json();
+            
+            const materialFilter = document.getElementById('materialFilter');
+            
+            materials.forEach(material => {
+                const option = document.createElement('option');
+                option.value = material.material_id;
+                option.textContent = material.material || `Material ${material.material_id}`;
+                materialFilter.appendChild(option);
+            });
+            
+            // Atualizar estatísticas
+            document.getElementById('totalMaterials').textContent = materials.length;
+        }
+
+        // Buscar usuários para filtro de trabalhadores
+        async function fetchUsers() {
+            const response = await fetch('/api/users');
+            const users = await response.json();
+            
+            const workerFilter = document.getElementById('workerFilter');
+            let workerCount = 0;
+            
+            users.forEach(user => {
+                if (user.user_type === 1) { // Apenas adicionar catadores
+                    const option = document.createElement('option');
+                    option.value = user.wastepicker_id;
+                    option.textContent = user.full_name;
+                    workerFilter.appendChild(option);
+                    workerCount++;
+                }
+            });
+            
+            // Atualizar estatísticas
+            document.getElementById('totalWorkers').textContent = workerCount;
+        }
+
+        // Buscar e exibir informações de estoque
+        async function fetchStock() {
+            const materialId = document.getElementById('materialFilter').value;
+            const url = materialId ? `/api/stock?material_id=${materialId}` : '/api/stock';
+            
+            // Mostrar loading
+            const stockChartContainer = document.getElementById('stockChart').parentElement;
+            stockChartContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // Restaurar container
+            stockChartContainer.innerHTML = '<canvas id="stockChart"></canvas>';
+            
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            
+            // Destruir gráfico existente se existir
+            if (stockChart) {
+                stockChart.destroy();
+            }
+            
+            // Calcular total de estoque
+            const totalStock = Object.values(data).reduce((sum, value) => sum + value, 0);
+            document.getElementById('totalStock').textContent = totalStock.toFixed(2);
+            
+            // Gerar cores para o gráfico
+            const colors = generateColors(Object.keys(data).length);
+            
+            stockChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        label: 'Estoque Atual (kg)',
+                        data: Object.values(data),
+                        backgroundColor: colors.map(color => color.replace('rgb', 'rgba').replace(')', ', 0.7)')),
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Estoque: ${context.raw.toFixed(2)} kg`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Peso (kg)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Buscar e exibir comparação de ganhos
+        async function fetchEarnings() {
+            const materialId = document.getElementById('materialFilter').value;
+            const url = materialId ? `/api/earnings-comparison?material_id=${materialId}` : '/api/earnings-comparison';
+            
+            // Mostrar loading
+            const earningsChartContainer = document.getElementById('earningsChart').parentElement;
+            earningsChartContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // Restaurar container
+            earningsChartContainer.innerHTML = '<canvas id="earningsChart"></canvas>';
+            
+            const ctx = document.getElementById('earningsChart').getContext('2d');
+            
+            // Destruir gráfico existente se existir
+            if (earningsChart) {
+                earningsChart.destroy();
+            }
+            
+            // Extrair meses e materiais únicos
+            const keys = Object.keys(data);
+            const months = [...new Set(keys.map(key => key.split('_')[0]))];
+            const materials = [...new Set(keys.map(key => key.split('_')[1]))];
+            
+            // Gerar cores para o gráfico
+            const colors = generateColors(materials.length);
+            
+            // Criar conjuntos de dados para cada material
+            const datasets = materials.map((material, index) => {
+                return {
+                    label: material,
+                    data: months.map(month => {
+                        const key = `${month}_${material}`;
+                        return data[key] || 0;
+                    }),
+                    backgroundColor: colors[index],
+                    borderColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ')'),
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                };
+            });
+            
+            // Obter opções comuns
+            const commonOptions = getCommonChartOptions();
+            
+            // Personalizar opções para o gráfico de ganhos
+            const options = {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    tooltip: {
+                        ...commonOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: R$ ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    x: {
+                        ...commonOptions.scales.x,
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Mês',
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            padding: 10
+                        }
+                    },
+                    y: {
+                        ...commonOptions.scales.y,
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Ganhos (R$)',
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            };
+            
+            earningsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: options
+            });
+            
+            // Calcular ganhos totais do mês atual
+            const currentMonth = new Date().toISOString().slice(0, 7); // Formato YYYY-MM
+            let totalEarnings = 0;
+            
+            for (const key in data) {
+                if (key.startsWith(currentMonth)) {
+                    totalEarnings += data[key];
+                }
+            }
+            
+            document.getElementById('totalEarnings').textContent = `R$ ${totalEarnings.toFixed(2)}`;
+        }
+
+        // Buscar e exibir coletas de trabalhadores
+        async function fetchWorkerCollections() {
+            const materialId = document.getElementById('materialFilter').value;
+            const workerId = document.getElementById('workerFilter').value;
+            
+            let url = '/api/worker-collections';
+            const params = [];
+            
+            if (materialId) {
+                params.push(`material_id=${materialId}`);
+            }
+            
+            if (workerId) {
+                params.push(`worker_id=${workerId}`);
+            }
+            
+            if (params.length > 0) {
+                url += `?${params.join('&')}`;
+            }
+            
+            console.log('Fetching worker collections from:', url);
+            
+            // Mostrar loading
+            const workerCollectionsChartContainer = document.getElementById('workerCollectionsChart').parentElement;
+            workerCollectionsChartContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                console.log('Raw worker collections response:', response);
+                console.log('Worker collections data:', data);
+                
+                if (!data || Object.keys(data).length === 0) {
+                    console.log('No worker collections data received');
+                    workerCollectionsChartContainer.innerHTML = '<div class="alert alert-info">Não há dados de coletas disponíveis.</div>';
+                    return;
+                }
+                
+                // Restaurar container
+                workerCollectionsChartContainer.innerHTML = '<canvas id="workerCollectionsChart"></canvas>';
+                
+                const ctx = document.getElementById('workerCollectionsChart').getContext('2d');
+                
+                // Destruir gráfico existente se existir
+                if (workerCollectionsChart) {
+                    workerCollectionsChart.destroy();
+                }
+                
+                // Extrair trabalhadores e materiais únicos
+                const workers = Object.keys(data);
+                const materials = new Set();
+                
+                // Collect all unique materials
+                workers.forEach(workerId => {
+                    const workerData = data[workerId];
+                    Object.keys(workerData.materials).forEach(materialId => {
+                        materials.add(materialId);
+                    });
+                });
+                
+                // Convert Set to Array
+                const materialsArray = Array.from(materials);
+                
+                console.log('Workers:', workers);
+                console.log('Materials:', materialsArray);
+                
+                // Gerar cores para o gráfico
+                const colors = generateColors(materialsArray.length);
+                
+                // Criar conjuntos de dados para cada material
+                const datasets = materialsArray.map((materialId, index) => {
+                    const materialData = workers.map(workerId => {
+                        const workerMaterials = data[workerId].materials;
+                        return workerMaterials[materialId] ? workerMaterials[materialId].weight : 0;
+                    });
+                    
+                    const materialName = data[workers[0]].materials[materialId].name;
+                    console.log(`Data for material ${materialName}:`, materialData);
+                    
+                    return {
+                        label: materialName,
+                        data: materialData,
+                        backgroundColor: colors[index],
+                        borderColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ')'),
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9
+                    };
+                });
+                
+                // Get worker names
+                const workerNames = workers.map(workerId => data[workerId].name);
+                
+                console.log('Worker names:', workerNames);
+                console.log('Datasets:', datasets);
+                
+                // Obter opções comuns
+                const commonOptions = getCommonChartOptions();
+                
+                // Personalizar opções para o gráfico de coletas de trabalhadores
+                const options = {
+                    ...commonOptions,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Peso Total (kg)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        ...commonOptions.plugins,
+                        tooltip: {
+                            ...commonOptions.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.raw || 0;
+                                    return `${label}: ${value.toFixed(2)} kg`;
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                workerCollectionsChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: workerNames,
+                        datasets: datasets
+                    },
+                    options: options
+                });
+            } catch (error) {
+                console.error('Error fetching worker collections:', error);
+                workerCollectionsChartContainer.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados de coletas.</div>';
+            }
+        }
+
+        // Buscar e exibir flutuação de preços
+        async function fetchPriceFluctuation() {
+            const materialId = document.getElementById('materialFilter').value;
+            const url = materialId ? `/api/price-fluctuation?material_id=${materialId}` : '/api/price-fluctuation';
+            
+            // Mostrar loading
+            const priceFluctuationChartContainer = document.getElementById('priceFluctuationChart').parentElement;
+            priceFluctuationChartContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i></div>';
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // Restaurar container
+            priceFluctuationChartContainer.innerHTML = '<canvas id="priceFluctuationChart"></canvas>';
+            
+            const ctx = document.getElementById('priceFluctuationChart').getContext('2d');
+            
+            // Destruir gráfico existente se existir
+            if (priceFluctuationChart) {
+                priceFluctuationChart.destroy();
+            }
+            
+            // Extrair semanas e materiais únicos
+            const keys = Object.keys(data);
+            const weeks = [...new Set(keys.map(key => key.split('_')[0]))];
+            const materials = [...new Set(keys.map(key => key.split('_')[1]))];
+            
+            // Gerar cores para o gráfico
+            const colors = generateColors(materials.length);
+            
+            // Criar conjuntos de dados para cada material
+            const datasets = materials.map((material, index) => {
+                return {
+                    label: material,
+                    data: weeks.map(week => {
+                        const key = `${week}_${material}`;
+                        return data[key] || 0;
+                    }),
+                    fill: false,
+                    borderColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ')'),
+                    backgroundColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ', 0.1)'),
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ')'),
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: colors[index].replace('rgba', 'rgb').replace(', 0.8)', ')'),
+                    pointHoverBorderWidth: 2
+                };
+            });
+            
+            // Obter opções comuns
+            const commonOptions = getCommonChartOptions();
+            
+            // Personalizar opções para o gráfico de flutuação de preços
+            const options = {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    tooltip: {
+                        ...commonOptions.plugins.tooltip,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: R$ ${context.raw.toFixed(2)}/kg`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    ...commonOptions.scales,
+                    x: {
+                        ...commonOptions.scales.x,
+                        title: {
+                            display: true,
+                            text: 'Semana',
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            padding: 10
+                        }
+                    },
+                    y: {
+                        ...commonOptions.scales.y,
+                        title: {
+                            display: true,
+                            text: 'Preço (R$/kg)',
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            padding: 10
+                        }
+                    }
+                }
+            };
+            
+            priceFluctuationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: datasets
+                },
+                options: options
+            });
+        }
+
+        // Buscar e exibir aniversários
+        async function fetchBirthdays() {
+            const response = await fetch('/api/birthdays');
+            const birthdays = await response.json();
+            
+            const birthdaysList = document.getElementById('birthdaysList');
+            
+            if (birthdays.length === 0) {
+                birthdaysList.innerHTML = '<div class="col-12 text-center"><p>Nenhum aniversariante este mês.</p></div>';
+                return;
+            }
+            
+            birthdaysList.innerHTML = birthdays.map(user => `
+                <div class="col-md-4 mb-3">
+                    <div class="birthday-card">
+                        <h6><i class="fas fa-user me-2"></i>${user.full_name}</h6>
+                        <p><i class="fas fa-calendar-alt me-2"></i>Aniversário: ${new Date(user['Birth date']).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Função para gerar cores para os gráficos
+        function generateColors(count) {
+            const colors = [
+                'rgba(46, 125, 50, 0.8)',   // Dark Green
+                'rgba(76, 175, 80, 0.8)',   // Green
+                'rgba(139, 195, 74, 0.8)',  // Light Green
+                'rgba(102, 187, 106, 0.8)', // Medium Green
+                'rgba(38, 166, 154, 0.8)',  // Teal
+                'rgba(0, 150, 136, 0.8)',   // Teal Green
+                'rgba(67, 160, 71, 0.8)',   // Forest Green
+                'rgba(104, 159, 56, 0.8)'   // Olive Green
+            ];
+            
+            // If we need more colors than we have, generate them
+            if (count > colors.length) {
+                const additionalColors = [];
+                for (let i = colors.length; i < count; i++) {
+                    const hue = (i * 360 / count) % 360;
+                    additionalColors.push(`hsla(${hue}, 70%, 50%, 0.8)`);
+                }
+                return [...colors, ...additionalColors];
+            }
+            
+            return colors.slice(0, count);
+        }
+
+        // Função para configurar opções comuns dos gráficos
+        function getCommonChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 12
+                            },
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#2c3e50',
+                        bodyColor: '#2c3e50',
+                        borderColor: '#e0e0e0',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: {
+                                family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+                                size: 11
+                            },
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // Inicializar todos os gráficos
+        async function initializeDashboard() {
+            await fetchMaterials();
+            await fetchUsers();
+            fetchStock();
+            fetchEarnings();
+            fetchWorkerCollections();
+            fetchPriceFluctuation();
+            fetchBirthdays();
+            
+            // Add recycling icons to cards
+            addRecyclingIcons();
+        }
+        
+        // Add recycling icons to cards
+        function addRecyclingIcons() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                // Add top right icon
+                const topRightIcon = document.createElement('div');
+                topRightIcon.className = 'recycling-icon recycling-icon-top-right';
+                topRightIcon.innerHTML = '<i class="fas fa-recycle"></i>';
+                card.appendChild(topRightIcon);
+                
+                // Add bottom left icon
+                const bottomLeftIcon = document.createElement('div');
+                bottomLeftIcon.className = 'recycling-icon recycling-icon-bottom-left';
+                bottomLeftIcon.innerHTML = '<i class="fas fa-leaf"></i>';
+                card.appendChild(bottomLeftIcon);
+            });
+        }
+
+        // Adicionar event listeners para filtros
+        document.getElementById('materialFilter').addEventListener('change', () => {
+            fetchStock();
+            fetchEarnings();
+            fetchWorkerCollections();
+            fetchPriceFluctuation();
+        });
+
+        document.getElementById('workerFilter').addEventListener('change', () => {
+            fetchWorkerCollections();
+        });
+
+        document.getElementById('dateFilter').addEventListener('change', () => {
+            // Isso exigiria alterações adicionais no backend para suportar filtragem por data
+            // Por enquanto, apenas atualizaremos todos os gráficos
+            fetchStock();
+            fetchEarnings();
+            fetchWorkerCollections();
+            fetchPriceFluctuation();
+        });
+
+        // Inicializar painel quando a página carregar
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html> 

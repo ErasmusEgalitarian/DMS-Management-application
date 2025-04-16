@@ -404,83 +404,130 @@ def get_worker_collections():
     current_year = current_date.year
     
     # Get filters
-    material_id = request.args.get('material_id')
-    worker_id = request.args.get('worker_id')
+    material_id_filter = request.args.get('material_id') # Renamed to avoid confusion
+    worker_id_filter = request.args.get('worker_id') # Renamed to avoid confusion
     
     # Build query for worker contributions
-    query = {
+    contribution_query = {
         'period': {
             'month': current_month,
             'year': current_year
         }
     }
     
-    if material_id:
-        query['material_id'] = material_id
+    if material_id_filter:
+        # Assuming material_id filter matches the 'material_id' field in contributions
+        contribution_query['material_id'] = material_id_filter # Keep as string for contribution query, assuming it's stored as string there
     
-    if worker_id:
-        query['wastepicker_id'] = worker_id
+    if worker_id_filter:
+        # Assuming worker_id filter refers to the CPF/wastepicker_id in contributions
+        contribution_query['wastepicker_id'] = worker_id_filter
     
-    # Get all worker-material combinations for the current period
-    worker_contributions = list(db.worker_contributions.find(query))
-    print(f"Found {len(worker_contributions)} worker contributions")
+    # Get worker contributions for the current period
+    worker_contributions = list(db.worker_contributions.find(contribution_query))
+    print(f"Found {len(worker_contributions)} worker contributions matching query {contribution_query}")
     
-    # Initialize result dictionary with all worker-material combinations
+    # Initialize result dictionary
     result = {}
     
-    # Get all workers
+    # Get relevant workers
     workers_query = {'user_type': {'$in': [1, 2]}}
-    if worker_id:
-        workers_query['wastepicker_id'] = worker_id
+    if worker_id_filter:
+        # Filter workers by wastepicker_id OR CPF if worker_id_filter is provided
+        # This assumes worker_id_filter might match either field
+        workers_query['$or'] = [
+            {'wastepicker_id': worker_id_filter},
+            {'CPF': worker_id_filter}
+        ]
     
     workers = list(db.users.find(workers_query))
-    print(f"Found {len(workers)} workers")
+    print(f"Found {len(workers)} workers matching query {workers_query}")
     
-    # Get all materials
+    # Get relevant materials from db.waste_type
     materials_query = {}
-    if material_id:
-        materials_query['_id'] = material_id
+    if material_id_filter:
+        # Assuming material_id_filter refers to the 'material_id' field in waste_type
+        # Try converting to int, as logs suggest it might be numeric in waste_type
+        try:
+            materials_query['material_id'] = int(material_id_filter)
+        except ValueError:
+             try:
+                 # If int conversion fails, try direct match (assuming string)
+                 materials_query['material_id'] = material_id_filter
+             except Exception as e:
+                 print(f"Invalid format or type for material_id filter: {material_id_filter}. Error: {e}")
+                 pass # Proceed without material filter if conversion/match fails
+
+    # Fetch materials from db.waste_type
+    materials = list(db.waste_type.find(materials_query, {'_id': 0})) # Exclude ObjectId if not needed
+    print(f"Found {len(materials)} materials from db.waste_type matching query {materials_query}")
     
-    materials = list(db.materials.find(materials_query))
-    print(f"Found {len(materials)} materials")
-    
-    # Create material name mapping
-    material_names = {str(material['_id']): material['name'] for material in materials}
-    
+    # Create material name mapping using fields from db.waste_type
+    # Using material_id as the key, matching contributions
+    material_mapping = {}
+    for material in materials:
+        mat_id = material.get('material_id')
+        mat_name = material.get('material', f'Unknown Material {mat_id}') # Use 'material' field for name
+        if mat_id is not None:
+             material_mapping[str(mat_id)] = mat_name # Use string version of ID as key
+        else:
+            print(f"Warning: Material document found without material_id in db.waste_type: {material}")
+
+    print(f"Created mapping for {len(material_mapping)} materials.")
+
     # Initialize result with all worker-material combinations
+    # Keyed by wastepicker_id (fallback to CPF) to match contributions
     for worker in workers:
-        worker_id = worker.get('wastepicker_id', worker.get('CPF'))  # Use wastepicker_id if available, fallback to CPF
-        result[worker_id] = {
+        # Use wastepicker_id if available, fallback to CPF
+        worker_key = worker.get('wastepicker_id', worker.get('CPF')) 
+        if not worker_key:
+            print(f"Skipping worker without wastepicker_id or CPF: {worker.get('full_name')}")
+            continue
+
+        result[worker_key] = {
             'name': worker['full_name'],
             'materials': {}
         }
-        for material in materials:
-            material_id = str(material['_id'])
-            result[worker_id]['materials'][material_id] = {
-                'name': material['name'],
+        # Initialize with materials found in db.waste_type
+        for mat_id_str, mat_name in material_mapping.items():
+            result[worker_key]['materials'][mat_id_str] = {
+                'name': mat_name,
                 'weight': 0,
                 'earnings': 0
             }
     
     # Update result with actual contributions
+    processed_contributions_count = 0
+    skipped_worker_count = 0
+    skipped_material_count = 0
     for contribution in worker_contributions:
-        worker_id = contribution.get('wastepicker_id')
-        material_id = str(contribution.get('material_id'))
+        # Use wastepicker_id from contribution for matching
+        worker_key = contribution.get('wastepicker_id') 
+        # Ensure material_id from contribution is treated as string for lookup
+        material_key = str(contribution.get('material_id'))
         weight = contribution.get('weight', 0)
         earnings = contribution.get('earnings', 0)
         
-        print(f"Processing contribution: worker_id={worker_id}, material_id={material_id}, weight={weight}, earnings={earnings}")
-        
-        if worker_id in result and material_id in result[worker_id]['materials']:
-            result[worker_id]['materials'][material_id]['weight'] = weight
-            result[worker_id]['materials'][material_id]['earnings'] = earnings
-    
+        if worker_key in result: # Check if the worker_key from contribution exists in result
+            if material_key in result[worker_key]['materials']: # Check if material_id string exists for this worker
+                result[worker_key]['materials'][material_key]['weight'] = weight
+                result[worker_key]['materials'][material_key]['earnings'] = earnings
+                processed_contributions_count += 1
+            else:
+                 skipped_material_count += 1
+                 # Debug print if material from contribution wasn't in the initial material_mapping
+                 # print(f"Debug: Material key '{material_key}' from contribution not found in initialized materials for worker '{worker_key}'. Contribution ID: {contribution.get('_id')}")
+        else:
+            skipped_worker_count += 1
+            # print(f"Debug: Worker key '{worker_key}' from contribution not found in initialized workers (result keys: {list(result.keys())}). Contribution ID: {contribution.get('_id')}")
+
     # Debug logging
-    print("Final result structure:")
-    for worker_id, worker_data in result.items():
-        print(f"Worker: {worker_data['name']}")
-        for material_id, material_data in worker_data['materials'].items():
-            print(f"  Material {material_id}: weight={material_data['weight']}, earnings={material_data['earnings']}")
+    print(f"Processed {processed_contributions_count} contributions.")
+    if skipped_worker_count > 0:
+        print(f"Warning: Skipped {skipped_worker_count} contributions due to worker key mismatch.")
+    if skipped_material_count > 0:
+        # This might be expected if filtering materials
+        print(f"Info: Skipped {skipped_material_count} contributions due to material key mismatch (could be due to filters or data inconsistency).")
     
     return jsonify(result)
 

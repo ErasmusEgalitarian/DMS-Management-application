@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 4. Create a `.env` file in the root directory with your MongoDB connection string:
 ```
-MONGODB_URI=MongoDB_API_KEY
+MONGODB_URI=mongodb://localhost:27017/
 ```
 
 ## Running the Application
@@ -74,4 +74,4 @@ http://localhost:5000
 
 ## Contributing
 
-Antônio Guimarães
+Feel free to submit issues and enhancement requests! 

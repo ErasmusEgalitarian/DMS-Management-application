@@ -8,28 +8,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MongoDB connection
-mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
-print(f"Connecting to MongoDB at: {mongodb_uri}")
-client = MongoClient(mongodb_uri)
-db = client['DMS']
-
-# Test connection
-try:
-    client.server_info()
-    print("Successfully connected to MongoDB")
-except Exception as e:
-    print(f"Failed to connect to MongoDB: {e}")
-    exit(1)
+client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
+db = client['DMS-LocalTest']
 
 # Clear existing data
-print("Clearing existing data...")
 db.users.delete_many({})
 db.measurements.delete_many({})
 db.sales.delete_many({})
-print("Existing data cleared")
 
 # Insert users
-print("Inserting users...")
 users = [
     {
         "CPF": "12345678901",
@@ -92,11 +79,10 @@ users = [
         "gender": "M"
     }
 ]
-result = db.users.insert_many(users)
-print(f"Users inserted: {len(result.inserted_ids)}")
+db.users.insert_many(users)
+print("Users inserted")
 
 # Generate measurements data
-print("Generating measurements data...")
 measurements = []
 wastepickers = ["WP001", "WP002", "WP003", "WP004"]
 materials_ids = [str(i) for i in range(1, 43)]  # Materials from 1 to 42
@@ -136,12 +122,10 @@ while current_date <= end_date:
     
     current_date += timedelta(days=1)
 
-print(f"Generated {len(measurements)} measurements")
-result = db.measurements.insert_many(measurements)
-print(f"Measurements inserted: {len(result.inserted_ids)}")
+db.measurements.insert_many(measurements)
+print("Measurements inserted")
 
 # Generate sales data
-print("Generating sales data...")
 sales = []
 # Generate data for the last 180 days (6 months)
 end_date = datetime.now()
@@ -176,8 +160,7 @@ while current_date <= end_date:
     
     current_date += timedelta(days=1)
 
-print(f"Generated {len(sales)} sales")
-result = db.sales.insert_many(sales)
-print(f"Sales inserted: {len(result.inserted_ids)}")
+db.sales.insert_many(sales)
+print("Sales inserted")
 
 print("Database populated successfully!") 

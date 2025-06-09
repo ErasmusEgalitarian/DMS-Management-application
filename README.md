@@ -1,4 +1,4 @@
-# DMS Dashboard
+# DMS Dashboard - First deploy with python and HTML, new version mad with JS available in:
 
 A web application to display and manage data from the MongoDB database for waste collection cooperatives.
 

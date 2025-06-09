@@ -1,4 +1,4 @@
-# DMS Dashboard - First deploy with python and HTML, new version mad with JS available in:
+# DMS Dashboard - First deploy with python and HTML, new version mad with JS available at: https://github.com/ErasmusEgalitarian/DMS-MGM-JS_APP
 
 A web application to display and manage data from the MongoDB database for waste collection cooperatives.
 
